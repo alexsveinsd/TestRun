@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calculator</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #1a1a2e;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    .calc {
+      background: #16213e;
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+      width: 320px;
+    }
+
+    .display {
+      background: #0f3460;
+      border-radius: 12px;
+      padding: 20px 16px 12px;
+      margin-bottom: 20px;
+      text-align: right;
+    }
+
+    .display .expr {
+      color: #a0aec0;
+      font-size: 13px;
+      min-height: 18px;
+      margin-bottom: 6px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .display .result {
+      color: #e2e8f0;
+      font-size: 36px;
+      font-weight: 300;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    button {
+      padding: 18px 0;
+      border: none;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: transform 0.08s, opacity 0.1s;
+    }
+
+    button:active { transform: scale(0.93); }
+
+    .btn-num  { background: #1a1a4e; color: #e2e8f0; }
+    .btn-num:hover  { background: #252566; }
+
+    .btn-op   { background: #0f3460; color: #63b3ed; }
+    .btn-op:hover   { background: #174080; }
+
+    .btn-eq   { background: #e94560; color: #fff; }
+    .btn-eq:hover   { background: #ff5577; }
+
+    .btn-clear { background: #2d3748; color: #fc8181; }
+    .btn-clear:hover { background: #3d4a5c; }
+
+    .btn-zero { grid-column: span 2; }
+  </style>
+</head>
+<body>
+  <div class="calc">
+    <div class="display">
+      <div class="expr" id="expr"></div>
+      <div class="result" id="result">0</div>
+    </div>
+    <div class="buttons">
+      <button class="btn-clear" onclick="clearAll()">AC</button>
+      <button class="btn-clear" onclick="toggleSign()">+/-</button>
+      <button class="btn-clear" onclick="percent()">%</button>
+      <button class="btn-op"    onclick="setOp('/')">÷</button>
+
+      <button class="btn-num"   onclick="input('7')">7</button>
+      <button class="btn-num"   onclick="input('8')">8</button>
+      <button class="btn-num"   onclick="input('9')">9</button>
+      <button class="btn-op"    onclick="setOp('*')">×</button>
+
+      <button class="btn-num"   onclick="input('4')">4</button>
+      <button class="btn-num"   onclick="input('5')">5</button>
+      <button class="btn-num"   onclick="input('6')">6</button>
+      <button class="btn-op"    onclick="setOp('-')">−</button>
+
+      <button class="btn-num"   onclick="input('1')">1</button>
+      <button class="btn-num"   onclick="input('2')">2</button>
+      <button class="btn-num"   onclick="input('3')">3</button>
+      <button class="btn-op"    onclick="setOp('+')">+</button>
+
+      <button class="btn-num btn-zero" onclick="input('0')">0</button>
+      <button class="btn-num"   onclick="inputDot()">.</button>
+      <button class="btn-eq"    onclick="calculate()">=</button>
+    </div>
+  </div>
+
+  <script>
+    let current = '0';
+    let stored = null;
+    let op = null;
+    let freshResult = false;
+
+    const elResult = document.getElementById('result');
+    const elExpr   = document.getElementById('expr');
+
+    function render() {
+      elResult.textContent = current;
+    }
+
+    function input(digit) {
+      if (freshResult) { current = '0'; freshResult = false; }
+      current = current === '0' ? digit : current + digit;
+      render();
+    }
+
+    function inputDot() {
+      if (freshResult) { current = '0'; freshResult = false; }
+      if (!current.includes('.')) current += '.';
+      render();
+    }
+
+    function setOp(nextOp) {
+      if (op && !freshResult) calculate(true);
+      stored = parseFloat(current);
+      op = nextOp;
+      freshResult = true;
+      elExpr.textContent = `${stored} ${opSymbol(op)}`;
+    }
+
+    function calculate(chaining = false) {
+      if (op === null || stored === null) return;
+      const b = parseFloat(current);
+      let res;
+      switch (op) {
+        case '+': res = stored + b; break;
+        case '-': res = stored - b; break;
+        case '*': res = stored * b; break;
+        case '/': res = b === 0 ? 'Error' : stored / b; break;
+      }
+      elExpr.textContent = chaining ? '' : `${stored} ${opSymbol(op)} ${b} =`;
+      current = res === 'Error' ? 'Error' : String(parseFloat(res.toFixed(10)));
+      if (!chaining) { stored = null; op = null; }
+      freshResult = true;
+      render();
+    }
+
+    function clearAll() {
+      current = '0'; stored = null; op = null; freshResult = false;
+      elExpr.textContent = '';
+      render();
+    }
+
+    function toggleSign() {
+      if (current !== '0' && current !== 'Error')
+        current = String(-parseFloat(current));
+      render();
+    }
+
+    function percent() {
+      if (current !== 'Error')
+        current = String(parseFloat(current) / 100);
+      render();
+    }
+
+    function opSymbol(o) {
+      return { '+': '+', '-': '−', '*': '×', '/': '÷' }[o] || o;
+    }
+  </script>
+</body>
+</html>
